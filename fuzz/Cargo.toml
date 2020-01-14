@@ -1,0 +1,31 @@
+# Copyright (c) 2020 MicroDoc Software GmbH.
+# See the "LICENSE.txt" file at the top-level directory of this distribution.
+#
+# Licensed under the the MIT license. This file may not be copied, modified,
+# or distributed except according to those terms.
+
+[package]
+name = "process_vm_io-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies.process_vm_io]
+path = ".."
+[dependencies.libfuzzer-sys]
+git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
+
+[dependencies]
+libc = { version = "0.2" }
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"

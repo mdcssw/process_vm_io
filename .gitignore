@@ -1,0 +1,4 @@
+Cargo.lock
+fuzz-*.log
+.directory
+.vscode/
