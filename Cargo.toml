@@ -36,7 +36,6 @@ keywords = [
     "debug",
     "test"
 ]
-publish = false
 
 [dev-dependencies]
 assert_matches = { version = "1.3" }
