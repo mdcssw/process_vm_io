@@ -29,7 +29,7 @@ keywords = [
     "process_vm_readv",
     "process_vm_writev",
     "ptrace",
-    "I/O",
+    "input-output",
     "memory",
     "inject",
     "monitor",
