@@ -24,17 +24,11 @@ categories = [
     "os"
 ]
 keywords = [
-    "proc",
-    "maps",
     "process_vm_readv",
     "process_vm_writev",
     "ptrace",
-    "input-output",
     "memory",
     "inject",
-    "monitor",
-    "debug",
-    "test"
 ]
 
 [dev-dependencies]
