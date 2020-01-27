@@ -9,7 +9,7 @@ name = "process_vm_io"
 version = "1.0.0" # Remember to update `html_root_url`.
 description = "I/O access to virtual memory contents of processes"
 authors = [
-    "Koutheir Attouchi <koutheir@gmail.com>"
+    "Koutheir Attouchi <koutheir.attouchi@microdoc.com>"
 ]
 homepage = "https://github.com/mdcssw/process_vm_io"
 repository = "https://github.com/mdcssw/process_vm_io"
