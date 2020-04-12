@@ -6,7 +6,7 @@
 
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.0")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.1")]
 
 /*!
  * # I/O access to virtual memory contents of processes
