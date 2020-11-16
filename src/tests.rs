@@ -254,7 +254,7 @@ fn access_address_zero() {
 
     assert_matches!(
         unsafe { ProcessVirtualMemoryIO::new(process_id, 0) }.unwrap()
-            .write(&mut buf).unwrap_err()
+            .write(&buf).unwrap_err()
             .into_inner().unwrap().downcast::<Error>().unwrap()
             .kind(),
         ErrorKind::Io { error, .. } if error.raw_os_error() == Some(libc::EFAULT)
