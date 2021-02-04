@@ -1,4 +1,4 @@
-// Copyright (c) 2020 MicroDoc Software GmbH.
+// Copyright (c) 2020-2021 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -6,7 +6,7 @@
 
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.4")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.5")]
 
 /*!
  * # I/O access to virtual memory contents of processes
@@ -371,8 +371,7 @@ impl ProcessVirtualMemoryIO {
     /// # Running processes
     ///
     /// Apart from the process identifier, there is no strong link between the
-    /// specified process and this [`ProcessVirtualMemoryIO`](ProcessVirtualMemoryIO)
-    /// instance.
+    /// specified process and this [`ProcessVirtualMemoryIO`] instance.
     /// If the specified process runs and terminates, then further I/O
     /// operations involving this instance may fail.
     /// If the process identifier of the dead process is reused by another
