@@ -77,7 +77,7 @@ The `CHANGELOG.md` file details notable changes over time.
 
 ## License
 
-Copyright (c) 2020 MicroDoc Software GmbH.
+Copyright (c) 2020-2021 MicroDoc Software GmbH.
 
 See the `LICENSE.txt` file at the top-level directory of this distribution.
 
