@@ -6,7 +6,7 @@
 
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.5")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.6")]
 
 /*!
  * # I/O access to virtual memory contents of processes
@@ -100,6 +100,7 @@
     variant_size_differences,
     unused_qualifications
 )]
+#![allow(clippy::upper_case_acronyms)]
 
 mod errors;
 #[cfg(test)]
