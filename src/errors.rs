@@ -6,6 +6,7 @@
 
 /*! Error reporting. */
 
+use std::os::raw::c_int;
 use std::sync::{Arc, Mutex};
 use std::{fmt, io};
 
@@ -169,7 +170,7 @@ impl Error {
 
     /// Returns the errno code for a given `Error`, if such a code has been
     /// reported by the operating system.
-    pub fn os_error_code(&self) -> Option<libc::c_int> {
+    pub fn os_error_code(&self) -> Option<c_int> {
         match &self.0.kind {
             ErrorKind::TooManyVMPages { .. } => None,
             ErrorKind::Io { error, .. } => error.raw_os_error(),

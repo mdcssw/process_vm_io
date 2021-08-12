@@ -109,7 +109,9 @@ mod tests;
 pub use errors::*;
 
 use std::convert::TryFrom;
+use std::ffi::c_void;
 use std::io::{IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
+use std::os::raw::c_ulong;
 use std::{cmp, io, panic, slice};
 
 use lazy_static::lazy_static;
@@ -147,10 +149,10 @@ const fn align_down(n: u64, alignment: u64) -> u64 {
 type ProcessVMReadVProc = unsafe extern "C" fn(
     libc::pid_t,
     *const libc::iovec,
-    libc::c_ulong,
+    c_ulong,
     *const libc::iovec,
-    libc::c_ulong,
-    libc::c_ulong,
+    c_ulong,
+    c_ulong,
 ) -> isize;
 
 /// An address range which is split, at page boundaries, over multiple sections.
@@ -304,7 +306,7 @@ impl PageAwareAddressRange {
 
         if self.size_in_first_page != 0 {
             result.push(libc::iovec {
-                iov_base: usize::try_from(self.start_address)? as *mut libc::c_void,
+                iov_base: usize::try_from(self.start_address)? as *mut c_void,
                 iov_len: usize::try_from(self.size_in_first_page)?,
             })
         }
@@ -315,7 +317,7 @@ impl PageAwareAddressRange {
         let mut remaining_size = self.size_of_inner_pages;
         while remaining_size != 0 {
             result.push(libc::iovec {
-                iov_base: usize::try_from(page_address)? as *mut libc::c_void,
+                iov_base: usize::try_from(page_address)? as *mut c_void,
                 iov_len: usize::try_from(min_page_size)?,
             });
             remaining_size -= min_page_size;
@@ -324,7 +326,7 @@ impl PageAwareAddressRange {
 
         if self.size_in_last_page != 0 {
             result.push(libc::iovec {
-                iov_base: usize::try_from(start_of_last_page)? as *mut libc::c_void,
+                iov_base: usize::try_from(start_of_last_page)? as *mut c_void,
                 iov_len: usize::try_from(self.size_in_last_page)?,
             })
         }
@@ -446,9 +448,9 @@ impl ProcessVirtualMemoryIO {
             process_vm_io_v(
                 self.process_id,
                 local_io_vectors.as_ptr(),
-                local_io_vectors.len() as libc::c_ulong,
+                local_io_vectors.len() as c_ulong,
                 remote_io_vectors.as_ptr(),
-                remote_io_vectors.len() as libc::c_ulong,
+                remote_io_vectors.len() as c_ulong,
                 0,
             )
         };
@@ -515,7 +517,7 @@ impl Seek for ProcessVirtualMemoryIO {
 impl Read for ProcessVirtualMemoryIO {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let local_io_vector = libc::iovec {
-            iov_base: buf.as_ptr() as *mut libc::c_void,
+            iov_base: buf.as_ptr() as *mut c_void,
             iov_len: buf.len(),
         };
 
@@ -536,7 +538,7 @@ impl Read for ProcessVirtualMemoryIO {
 impl Write for ProcessVirtualMemoryIO {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let local_io_vector = libc::iovec {
-            iov_base: buf.as_ptr() as *mut libc::c_void,
+            iov_base: buf.as_ptr() as *mut c_void,
             iov_len: buf.len(),
         };
 
