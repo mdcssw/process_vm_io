@@ -1,7 +1,7 @@
 [![crates.io](https://img.shields.io/crates/v/process_vm_io.svg)](https://crates.io/crates/process_vm_io)
 [![docs.rs](https://docs.rs/process_vm_io/badge.svg)](https://docs.rs/process_vm_io)
 [![license](https://img.shields.io/github/license/mdcssw/process_vm_io?color=black)](https://raw.githubusercontent.com/mdcssw/process_vm_io/master/LICENSE.txt)
-[![dependency status](https://deps.rs/crate/process_vm_io/1.0.6/status.svg)](https://deps.rs/crate/process_vm_io/1.0.6)
+[![dependency status](https://deps.rs/crate/process_vm_io/1.0.6/status.svg)](https://deps.rs/crate/process_vm_io/1.0.7)
 
 # I/O access to virtual memory contents of processes
 
@@ -77,7 +77,7 @@ The `CHANGELOG.md` file details notable changes over time.
 
 ## License
 
-Copyright (c) 2020-2021 MicroDoc Software GmbH.
+Copyright (c) 2020-2022 MicroDoc Software GmbH.
 
 See the `LICENSE.txt` file at the top-level directory of this distribution.
 

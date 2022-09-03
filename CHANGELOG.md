@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2022-09-03
+
+### Changed
+
+- Updated Rust edition to 2021.
+- Updated dependencies: `smallvec`.
+
 ## [1.0.6] - 2021-07-30
 
 ### Changed

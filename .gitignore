@@ -1,4 +1,6 @@
+/target
 Cargo.lock
-fuzz-*.log
-.directory
+*.code-workspace
 .vscode/
+.directory
+fuzz-*.log
