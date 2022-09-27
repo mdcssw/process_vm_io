@@ -13,6 +13,7 @@ This can be used for process monitoring, debugging, testing, communication, etc.
 Reading the stack of the currently running process, through this library:
 
 ```rust
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use process_vm_io::ProcessVirtualMemoryIO;
 use std::io::Read;
 
@@ -26,11 +27,14 @@ let mut buffer = [0u8; std::mem::size_of::<u32>()];
 process_io.read_exact(&mut buffer)?;
 let also_pid = u32::from_ne_bytes(buffer);
 assert_eq!(process_id, also_pid);
+# Ok(())
+# }
 ```
 
 Writing to the heap of the currently running process, through this library:
 
 ```rust
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use process_vm_io::ProcessVirtualMemoryIO;
 use std::io::{Seek, Write};
 
@@ -46,6 +50,8 @@ process_io.seek(std::io::SeekFrom::Start(pid_on_the_heap.as_mut() as *mut _ as u
 process_io.write(&process_id.to_ne_bytes())?;
 
 assert_eq!(process_id, *pid_on_the_heap);
+# Ok(())
+# }
 ```
 
 ## Safety
