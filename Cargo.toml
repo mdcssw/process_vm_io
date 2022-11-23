@@ -1,6 +1,6 @@
 [package]
 name = "process_vm_io"
-version = "1.0.7" # Remember to update `html_root_url` and `dependency status` link.
+version = "1.0.8" # Remember to update `html_root_url` and `dependency status` link.
 description = "I/O access to virtual memory contents of processes"
 authors = [
     "Koutheir Attouchi <koutheir.attouchi@microdoc.com>"
@@ -32,4 +32,4 @@ assert_matches = { version = "1.5" }
 backtrace   = { version = "0.3" }
 lazy_static = { version = "1.4" }
 libc        = { version = "0.2" }
-smallvec    = { version = "1.9" }
+smallvec    = { version = "1.10" }

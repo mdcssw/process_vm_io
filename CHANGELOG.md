@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2022-11-22
+
+### Changed
+
+- Updated dependencies: `smallvec`.
+
 ## [1.0.7] - 2022-09-03
 
 ### Changed

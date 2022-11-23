@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.7")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.8")]
 
 #![warn(
     missing_docs,
@@ -173,8 +173,8 @@ impl PageAwareAddressRange {
         let mut size_of_not_covered_suffix = 0;
 
         let mut inner_pages_count = usize::try_from(self.size_of_inner_pages / min_page_size)?;
-        let mut total_count = if self.size_in_first_page != 0 { 1 } else { 0 }
-            + if self.size_in_last_page != 0 { 1 } else { 0 }
+        let mut total_count = usize::from(self.size_in_first_page != 0)
+            + usize::from(self.size_in_last_page != 0)
             + inner_pages_count;
 
         let mut count = {

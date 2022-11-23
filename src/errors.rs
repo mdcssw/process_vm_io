@@ -80,9 +80,9 @@ impl ErrorData {
 }
 
 impl fmt::Debug for ErrorData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
         if self.resolve_back_trace() {
-            fmt::Debug::fmt(self, f)
+            fmt::Debug::fmt(self, _f)
         } else {
             Ok(())
         }

@@ -1,7 +1,7 @@
 [![crates.io](https://img.shields.io/crates/v/process_vm_io.svg)](https://crates.io/crates/process_vm_io)
 [![docs.rs](https://docs.rs/process_vm_io/badge.svg)](https://docs.rs/process_vm_io)
 [![license](https://img.shields.io/github/license/mdcssw/process_vm_io?color=black)](https://raw.githubusercontent.com/mdcssw/process_vm_io/master/LICENSE.txt)
-[![dependency status](https://deps.rs/crate/process_vm_io/1.0.6/status.svg)](https://deps.rs/crate/process_vm_io/1.0.7)
+[![dependency status](https://deps.rs/crate/process_vm_io/1.0.8/status.svg)](https://deps.rs/crate/process_vm_io/1.0.8)
 
 # I/O access to virtual memory contents of processes
 
