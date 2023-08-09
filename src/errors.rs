@@ -1,4 +1,4 @@
-// Copyright (c) 2020 MicroDoc Software GmbH.
+// Copyright (c) 2020-2023 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -98,15 +98,15 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.0.kind {
             ErrorKind::TooManyVMPages => {
-                write!(f, "Virtual memory address range contains too many pages")
+                write!(f, "virtual memory address range contains too many pages")
             }
             ErrorKind::Io {
                 operation,
                 error,
                 process_id,
             } => match process_id {
-                None => write!(f, "{}: {}", operation, error),
-                Some(process_id) => write!(f, "{}({}): {}", operation, process_id, error),
+                None => write!(f, "{operation}: {error}"),
+                Some(process_id) => write!(f, "{operation}({process_id}): {error}"),
             },
             ErrorKind::IntegerCast(err) => err.fmt(f),
         }

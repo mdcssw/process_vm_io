@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 MicroDoc Software GmbH.
+// Copyright (c) 2020-2023 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.8")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.9")]
 
 #![warn(
     missing_docs,
