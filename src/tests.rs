@@ -12,7 +12,7 @@ use super::*;
 fn sensible_virtual_memory_page_size() {
     let size = *MIN_SYSTEM_PAGE_SIZE;
     assert!(size > 0);
-    assert!(size < u64::max_value());
+    assert!(size < u64::MAX);
     assert!(size.is_power_of_two());
 }
 
@@ -36,9 +36,9 @@ fn new_page_aware_address_range_1page() {
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value(), 0),
+        PageAwareAddressRange::new(u64::MAX, 0),
         PageAwareAddressRange {
-            start_address: u64::max_value(),
+            start_address: u64::MAX,
             ..Default::default()
         }
     );
@@ -66,25 +66,25 @@ fn new_page_aware_address_range_1page() {
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 16, 13),
+        PageAwareAddressRange::new(u64::MAX - 16, 13),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 16,
+            start_address: u64::MAX - 16,
             size_in_first_page: 13,
             ..Default::default()
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 16, 16),
+        PageAwareAddressRange::new(u64::MAX - 16, 16),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 16,
+            start_address: u64::MAX - 16,
             size_in_first_page: 16,
             ..Default::default()
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 16, 17),
+        PageAwareAddressRange::new(u64::MAX - 16, 17),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 16,
+            start_address: u64::MAX - 16,
             size_in_first_page: 17,
             ..Default::default()
         }
@@ -114,11 +114,11 @@ fn new_page_aware_address_range_1page() {
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::max_value() - *MIN_SYSTEM_PAGE_SIZE + 1,
+            u64::MAX - *MIN_SYSTEM_PAGE_SIZE + 1,
             *MIN_SYSTEM_PAGE_SIZE
         ),
         PageAwareAddressRange {
-            start_address: u64::max_value() - *MIN_SYSTEM_PAGE_SIZE + 1,
+            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE + 1,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
             ..Default::default()
         }
@@ -128,7 +128,7 @@ fn new_page_aware_address_range_1page() {
 #[test]
 fn new_page_aware_address_range_2pages() {
     for addr in &[
-        u64::max_value() - 7,
+        u64::MAX - 7,
         *MIN_SYSTEM_PAGE_SIZE - 8,
         0x1000_0000 - 8,
     ] {
@@ -147,27 +147,27 @@ fn new_page_aware_address_range_2pages() {
 #[test]
 fn new_page_aware_address_range_manypages() {
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 5),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 5),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 7,
+            start_address: u64::MAX - 7,
             size_in_first_page: 8,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 5,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 7, 32 + *MIN_SYSTEM_PAGE_SIZE),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 7,
+            start_address: u64::MAX - 7,
             size_in_first_page: 8,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::max_value() - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 2),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 2),
         PageAwareAddressRange {
-            start_address: u64::max_value() - 7,
+            start_address: u64::MAX - 7,
             size_in_first_page: 8,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 2,
             size_in_last_page: 24,
@@ -175,11 +175,11 @@ fn new_page_aware_address_range_manypages() {
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::max_value() - *MIN_SYSTEM_PAGE_SIZE - 7,
+            u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
             32 + *MIN_SYSTEM_PAGE_SIZE
         ),
         PageAwareAddressRange {
-            start_address: u64::max_value() - *MIN_SYSTEM_PAGE_SIZE - 7,
+            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
             size_in_first_page: 8,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
             size_in_last_page: 24,
@@ -187,11 +187,11 @@ fn new_page_aware_address_range_manypages() {
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::max_value() - *MIN_SYSTEM_PAGE_SIZE - 7,
+            u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
             32 + *MIN_SYSTEM_PAGE_SIZE * 2
         ),
         PageAwareAddressRange {
-            start_address: u64::max_value() - *MIN_SYSTEM_PAGE_SIZE - 7,
+            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
             size_in_first_page: 8,
             size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 2,
             size_in_last_page: 24,
@@ -221,13 +221,13 @@ fn new_page_aware_address_range_manypages() {
 fn new_invalid_process_id() {
     assert_matches!(
         unsafe { ProcessVirtualMemoryIO::new(1, 0) }.unwrap_err().kind(),
-        ErrorKind::Io { error, process_id: Some(1), .. } if error.kind() == std::io::ErrorKind::PermissionDenied
+        ErrorKind::Io { error, process_id: Some(1), .. } if error.kind() == io::ErrorKind::PermissionDenied
     );
 
     for pid in -2_i32..=0 {
         assert_matches!(
             unsafe { ProcessVirtualMemoryIO::new(pid as u32, 0) }.unwrap_err().kind(),
-            ErrorKind::Io { error, .. } if error.kind() == std::io::ErrorKind::InvalidInput
+            ErrorKind::Io { error, .. } if error.kind() == io::ErrorKind::InvalidInput
         );
     }
 }
@@ -236,7 +236,7 @@ fn new_invalid_process_id() {
 fn new_invalid_address() {
     let process_id = std::process::id();
     assert!(unsafe { ProcessVirtualMemoryIO::new(process_id, 0) }.is_ok());
-    assert!(unsafe { ProcessVirtualMemoryIO::new(process_id, u64::max_value()) }.is_ok());
+    assert!(unsafe { ProcessVirtualMemoryIO::new(process_id, u64::MAX) }.is_ok());
 }
 
 #[test]

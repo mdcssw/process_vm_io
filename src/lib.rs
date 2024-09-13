@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.10")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.11")]
 
 #![warn(
     unsafe_op_in_unsafe_fn,
@@ -49,7 +49,7 @@ lazy_static! {
     /// of `u64::max_value()`.
     static ref MIN_SYSTEM_PAGE_SIZE: u64 =
         match unsafe { libc::sysconf(libc::_SC_PAGE_SIZE) } {
-            -1 => u64::max_value(),
+            -1 => u64::MAX,
             result => result as u64,
         };
 
@@ -360,10 +360,7 @@ impl ProcessVirtualMemoryIO {
         let address = self.address.unwrap();
 
         // Do not overflow the address space.
-        let mut max_remaining_bytes = u64::max_value() - address;
-        if max_remaining_bytes < u64::max_value() {
-            max_remaining_bytes += 1;
-        }
+        let max_remaining_bytes = (u64::MAX - address).saturating_add(1);
         byte_count = cmp::min(byte_count, max_remaining_bytes);
 
         let (remote_io_vectors, _size_of_not_covered_suffix) =
@@ -422,11 +419,11 @@ impl Seek for ProcessVirtualMemoryIO {
 
             (None, SeekFrom::Current(n)) /* if n < 0 */ => {
                 let backward = n.wrapping_neg() as u64;
-                Some((u64::max_value() - backward) + 1)
+                Some((u64::MAX - backward) + 1)
             }
             (_, SeekFrom::End(n)) /* if n < 0 */ => {
                 let backward = n.wrapping_neg() as u64;
-                Some((u64::max_value() - backward) + 1)
+                Some((u64::MAX - backward) + 1)
             }
 
             (Some(address), SeekFrom::Current(n)) /* if n < 0 */ => {
@@ -435,7 +432,7 @@ impl Seek for ProcessVirtualMemoryIO {
             }
         };
 
-        Ok(self.address.unwrap_or(u64::max_value()))
+        Ok(self.address.unwrap_or(u64::MAX))
     }
 }
 
