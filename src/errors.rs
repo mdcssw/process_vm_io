@@ -6,12 +6,14 @@
 
 /*! Error reporting. */
 
+use alloc::sync::Arc;
+use core::fmt;
+use std::io;
 use std::os::raw::c_int;
-use std::sync::{Arc, Mutex};
-use std::{fmt, io};
+use std::sync::Mutex;
 
 /// A result of a fallible operation.
-pub(crate) type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = core::result::Result<T, Error>;
 
 /// Actual storage for an error.
 #[derive(Debug, Clone)]
@@ -34,7 +36,7 @@ pub enum ErrorKind {
 
     /// Casting an integer caused data loss.
     #[non_exhaustive]
-    IntegerCast(std::num::TryFromIntError),
+    IntegerCast(core::num::TryFromIntError),
 }
 
 /// Call stack back trace where the `Error` object was created.
@@ -113,8 +115,8 @@ impl fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for Error {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match &self.0.kind {
             // Errors that are self-descriptive.
             ErrorKind::TooManyVMPages => None,
@@ -142,8 +144,8 @@ impl From<ErrorKind> for Error {
 }
 
 /// Wrap another error into an instance of `Error`.
-impl From<std::num::TryFromIntError> for Error {
-    fn from(err: std::num::TryFromIntError) -> Self {
+impl From<core::num::TryFromIntError> for Error {
+    fn from(err: core::num::TryFromIntError) -> Self {
         Self::from(ErrorKind::IntegerCast(err))
     }
 }

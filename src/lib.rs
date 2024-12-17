@@ -8,7 +8,6 @@
 
 #![doc = include_str!("../README.md")]
 #![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.11")]
-
 #![warn(
     unsafe_op_in_unsafe_fn,
     missing_docs,
@@ -23,7 +22,10 @@
     unused_import_braces,
     unused_labels,
     variant_size_differences,
-    unused_qualifications
+    unused_qualifications,
+    clippy::alloc_instead_of_core,
+    clippy::std_instead_of_core,
+    clippy::std_instead_of_alloc
 )]
 #![allow(clippy::upper_case_acronyms)]
 
@@ -31,13 +33,16 @@ mod errors;
 #[cfg(test)]
 mod tests;
 
+extern crate alloc;
+
 pub use errors::*;
 
-use std::convert::TryFrom;
-use std::ffi::c_void;
+use core::convert::TryFrom;
+use core::ffi::c_void;
+use core::{cmp, slice};
 use std::io::{IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
 use std::os::raw::c_ulong;
-use std::{cmp, io, panic, slice};
+use std::{io, panic};
 
 use lazy_static::lazy_static;
 use smallvec::SmallVec;
