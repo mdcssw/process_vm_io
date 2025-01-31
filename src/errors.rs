@@ -22,6 +22,12 @@ pub enum ErrorKind {
     /// Virtual memory address range contains too many pages.
     TooManyVMPages,
 
+    /// Failed to query the system page size.
+    UnknownPageSize,
+
+    /// Invalid system page size.
+    InvalidPageSize(u64),
+
     /// Some [`io::Error`](std::io::Error) occurred.
     #[non_exhaustive]
     Io {
@@ -87,6 +93,12 @@ impl fmt::Display for Error {
             ErrorKind::TooManyVMPages => {
                 write!(f, "virtual memory address range contains too many pages")
             }
+            ErrorKind::UnknownPageSize => {
+                write!(f, "failed to query the system page size")
+            }
+            ErrorKind::InvalidPageSize(size) => {
+                write!(f, "invalid system page size: {size} bytes")
+            }
             ErrorKind::Io {
                 operation,
                 error,
@@ -104,7 +116,10 @@ impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match &self.0.kind {
             // Errors that are self-descriptive.
-            ErrorKind::TooManyVMPages | ErrorKind::Io { .. } => None,
+            ErrorKind::TooManyVMPages
+            | ErrorKind::UnknownPageSize
+            | ErrorKind::InvalidPageSize(_)
+            | ErrorKind::Io { .. } => None,
 
             // Errors that defer description to the inner error.
             ErrorKind::IntegerCast(err) => Some(err),
@@ -160,7 +175,11 @@ impl Error {
     #[must_use]
     pub fn os_error_code(&self) -> Option<c_int> {
         match &self.0.kind {
-            ErrorKind::TooManyVMPages { .. } | ErrorKind::IntegerCast { .. } => None,
+            ErrorKind::TooManyVMPages { .. }
+            | ErrorKind::UnknownPageSize
+            | ErrorKind::InvalidPageSize(_)
+            | ErrorKind::IntegerCast { .. } => None,
+
             ErrorKind::Io { error, .. } => error.raw_os_error(),
         }
     }

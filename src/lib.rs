@@ -52,50 +52,25 @@
 mod errors;
 #[cfg(test)]
 mod tests;
+mod utils;
 
 extern crate alloc;
 
 use errors::Result;
 pub use errors::{Error, ErrorKind};
 
+use core::cmp;
 use core::ffi::c_void;
-use core::num::NonZero;
-use core::{cmp, slice};
 use std::io::{IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
 use std::os::raw::c_ulong;
 use std::{io, panic};
 
-use lazy_static::lazy_static;
 use smallvec::SmallVec;
 
-lazy_static! {
-    /// Size in bytes of the smallest possible virtual memory page.
-    ///
-    /// Failure to fetch the information will result in a size
-    /// of `u64::max_value()`.
-    static ref MIN_SYSTEM_PAGE_SIZE: NonZero<u64> =
-        match unsafe { libc::sysconf(libc::_SC_PAGE_SIZE) } {
-            -1 => NonZero::<u64>::MAX,
-            0 => unsafe { NonZero::<u64>::new_unchecked(4096) },
-            result => unsafe { NonZero::<u64>::new_unchecked(result as u64) },
-        };
-
-    /// Maximum number of the `iovec` structures that can be provided to
-    /// one system call.
-    ///
-    /// Failure to fetch the information will result in a count of `1`.
-    static ref SYSTEM_IOV_MAX: usize =
-        match unsafe { libc::sysconf(libc::_SC_IOV_MAX) } {
-            -1 => 1,
-            result => result as usize,
-        };
-}
-
-/// Align a given number down to a specified alignment boundary.
-const fn align_down(n: u64, alignment: NonZero<u64>) -> u64 {
-    // Notice that the calculation below never causes an overflow.
-    n & !alignment.get().saturating_sub(1)
-}
+use crate::utils::{
+    align_down, ensure_process_exists, io_vectors_from_io_slices, io_vectors_from_io_slices_mut,
+    min_system_page_size, system_iov_max,
+};
 
 /// Prototype of the APIs `process_vm_readv()` and `process_vm_writev()`.
 type ProcessVMReadVProc = unsafe extern "C" fn(
@@ -124,17 +99,17 @@ struct PageAwareAddressRange {
 impl PageAwareAddressRange {
     /// Convert a plain address range into an address range which is split,
     /// at page boundaries, over multiple sections.
-    fn new(start_address: u64, mut size: u64) -> Self {
+    fn new(start_address: u64, mut size: u64) -> Result<Self> {
         if size == 0 {
-            return Self {
+            return Ok(Self {
                 start_address,
                 size_in_first_page: 0,
                 size_of_inner_pages: 0,
                 size_in_last_page: 0,
-            };
+            });
         }
 
-        let min_page_size = *MIN_SYSTEM_PAGE_SIZE;
+        let min_page_size = min_system_page_size()?;
         let distance_to_preceeding_page_boundary =
             start_address - align_down(start_address, min_page_size);
 
@@ -145,19 +120,19 @@ impl PageAwareAddressRange {
             //             | -- distance_to_preceeding_page_boundary -- v ---- size ---- v                  |
             // preceeding_page_boundary           -->             start_address --> end_address --> next_page_boundary
             return if distance_to_preceeding_page_boundary == 0 && size == min_page_size.get() {
-                Self {
+                Ok(Self {
                     start_address,
                     size_in_first_page: 0,
                     size_of_inner_pages: size,
                     size_in_last_page: 0,
-                }
+                })
             } else {
-                Self {
+                Ok(Self {
                     start_address,
                     size_in_first_page: size,
                     size_of_inner_pages: 0,
                     size_in_last_page: 0,
-                }
+                })
             };
         }
 
@@ -180,12 +155,12 @@ impl PageAwareAddressRange {
         let size_of_inner_pages = align_down(size, min_page_size);
         let size_in_last_page = size - size_of_inner_pages;
 
-        Self {
+        Ok(Self {
             start_address,
             size_in_first_page,
             size_of_inner_pages,
             size_in_last_page,
-        }
+        })
     }
 
     /// Transform this address range into a vector of `iovec`s.
@@ -196,8 +171,8 @@ impl PageAwareAddressRange {
     /// (if any) is also returned. Returning a vector of `iovec`s that covers
     /// only a prefix of this address range is not considered a failure.
     fn into_iov_buffers(mut self) -> Result<(SmallVec<[libc::iovec; 3]>, u64)> {
-        let min_page_size = MIN_SYSTEM_PAGE_SIZE.get();
-        let max_iov_count = *SYSTEM_IOV_MAX;
+        let min_page_size = min_system_page_size()?.get();
+        let max_iov_count = system_iov_max().get();
         let mut size_of_not_covered_suffix = 0;
 
         let mut inner_pages_count = usize::try_from(self.size_of_inner_pages / min_page_size)?;
@@ -342,7 +317,7 @@ impl ProcessVirtualMemoryIO {
             ));
         }
 
-        Self::ensure_process_exists(process_id)?;
+        ensure_process_exists(process_id)?;
 
         Ok(Self {
             process_id,
@@ -356,28 +331,12 @@ impl ProcessVirtualMemoryIO {
         self.process_id as u32
     }
 
-    /// Ensure that the process, identified by the given process identifier,
-    /// currently exists in the system.
-    fn ensure_process_exists(process_id: libc::pid_t) -> Result<()> {
-        if unsafe { libc::kill(process_id, 0) } != -1 {
-            return Ok(());
-        }
-
-        let mut err = io::Error::last_os_error();
-        err = match err.raw_os_error() {
-            Some(libc::ESRCH) => io::Error::from(io::ErrorKind::NotFound),
-            Some(libc::EINVAL) => io::Error::from(io::ErrorKind::InvalidInput),
-            Some(libc::EPERM) => io::Error::from(io::ErrorKind::PermissionDenied),
-            _ => err,
-        };
-        Err(Error::from_io3(err, "kill", process_id))
-    }
-
     /// Perform vectored (i.e., scatter/gather) I/O on the virtual memory of the
     /// target process.
     fn io_vectored(
         &mut self,
         process_vm_io_v: ProcessVMReadVProc,
+        process_vm_io_v_name: &'static str,
         local_io_vectors: &[libc::iovec],
         mut byte_count: u64,
     ) -> Result<usize> {
@@ -392,7 +351,7 @@ impl ProcessVirtualMemoryIO {
         byte_count = cmp::min(byte_count, max_remaining_bytes);
 
         let (remote_io_vectors, _size_of_not_covered_suffix) =
-            PageAwareAddressRange::new(address, byte_count).into_iov_buffers()?;
+            PageAwareAddressRange::new(address, byte_count)?.into_iov_buffers()?;
 
         let transferred_bytes_count = unsafe {
             process_vm_io_v(
@@ -408,7 +367,7 @@ impl ProcessVirtualMemoryIO {
         if transferred_bytes_count == -1 {
             return Err(Error::from_io3(
                 io::Error::last_os_error(),
-                "process_vm_readv/process_vm_writev",
+                process_vm_io_v_name,
                 self.process_id,
             ));
         }
@@ -470,16 +429,25 @@ impl Read for ProcessVirtualMemoryIO {
             iov_len: buf.len(),
         };
 
-        self.io_vectored(libc::process_vm_readv, &[local_io_vector], buf.len() as u64)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        self.io_vectored(
+            libc::process_vm_readv,
+            "process_vm_readv",
+            &[local_io_vector],
+            buf.len() as u64,
+        )
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
     fn read_vectored(&mut self, bufs: &mut [IoSliceMut]) -> io::Result<usize> {
-        let bytes_to_read = bufs.iter().map(|buf| buf.len() as u64).sum();
-        let local_io_vectors = unsafe { slice::from_raw_parts(bufs.as_ptr().cast(), bufs.len()) };
+        let (byte_count, local_io_vectors) = io_vectors_from_io_slices_mut(bufs);
 
-        self.io_vectored(libc::process_vm_readv, local_io_vectors, bytes_to_read)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        self.io_vectored(
+            libc::process_vm_readv,
+            "process_vm_readv",
+            local_io_vectors,
+            byte_count,
+        )
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }
 
@@ -492,6 +460,7 @@ impl Write for ProcessVirtualMemoryIO {
 
         self.io_vectored(
             libc::process_vm_writev,
+            "process_vm_writev",
             &[local_io_vector],
             buf.len() as u64,
         )
@@ -499,11 +468,15 @@ impl Write for ProcessVirtualMemoryIO {
     }
 
     fn write_vectored(&mut self, bufs: &[IoSlice]) -> io::Result<usize> {
-        let bytes_to_write = bufs.iter().map(|buf| buf.len() as u64).sum();
-        let local_io_vectors = unsafe { slice::from_raw_parts(bufs.as_ptr().cast(), bufs.len()) };
+        let (byte_count, local_io_vectors) = io_vectors_from_io_slices(bufs);
 
-        self.io_vectored(libc::process_vm_writev, local_io_vectors, bytes_to_write)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        self.io_vectored(
+            libc::process_vm_writev,
+            "process_vm_writev",
+            local_io_vectors,
+            byte_count,
+        )
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
     fn flush(&mut self) -> io::Result<()> {

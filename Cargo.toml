@@ -30,6 +30,5 @@ assert_matches = { version = "1" }
 
 [dependencies]
 backtrace   = { version = "0.3" }
-lazy_static = { version = "1" }
 libc        = { version = "0.2" }
 smallvec    = { version = "1" }

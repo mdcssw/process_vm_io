@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.12] - 2025-01-31
+
+### Removed
+
+- Dependency `lazy_static`. Replaced by a lock-free implementation.
+
 ## [1.0.11] - 2024-09-12
 
 ### Changed
