@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2024 MicroDoc Software GmbH.
+// Copyright (c) 2020-2025 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.11")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.12")]
 #![warn(
     unsafe_op_in_unsafe_fn,
     missing_docs,
@@ -22,12 +22,32 @@
     unused_import_braces,
     unused_labels,
     variant_size_differences,
-    unused_qualifications,
+    unused_qualifications
+)]
+//#![warn(clippy::pedantic, clippy::restriction)]
+#![allow(
     clippy::alloc_instead_of_core,
     clippy::std_instead_of_core,
-    clippy::std_instead_of_alloc
+    clippy::std_instead_of_alloc,
+    clippy::upper_case_acronyms,
+    clippy::arbitrary_source_item_ordering,
+    clippy::single_call_fn,
+    clippy::pub_use,
+    clippy::missing_docs_in_private_items,
+    clippy::implicit_return,
+    clippy::unwrap_used,
+    clippy::separated_literal_suffix,
+    clippy::absolute_paths,
+    clippy::assertions_on_result_states,
+    clippy::undocumented_unsafe_blocks,
+    clippy::unwrap_in_result,
+    clippy::missing_inline_in_public_items,
+    clippy::missing_trait_methods,
+    clippy::question_mark_used,
+    clippy::else_if_without_else,
+    clippy::shadow_reuse,
+    clippy::default_numeric_fallback
 )]
-#![allow(clippy::upper_case_acronyms)]
 
 mod errors;
 #[cfg(test)]
@@ -35,10 +55,11 @@ mod tests;
 
 extern crate alloc;
 
-pub use errors::*;
+use errors::Result;
+pub use errors::{Error, ErrorKind};
 
-use core::convert::TryFrom;
 use core::ffi::c_void;
+use core::num::NonZero;
 use core::{cmp, slice};
 use std::io::{IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
 use std::os::raw::c_ulong;
@@ -52,10 +73,11 @@ lazy_static! {
     ///
     /// Failure to fetch the information will result in a size
     /// of `u64::max_value()`.
-    static ref MIN_SYSTEM_PAGE_SIZE: u64 =
+    static ref MIN_SYSTEM_PAGE_SIZE: NonZero<u64> =
         match unsafe { libc::sysconf(libc::_SC_PAGE_SIZE) } {
-            -1 => u64::MAX,
-            result => result as u64,
+            -1 => NonZero::<u64>::MAX,
+            0 => unsafe { NonZero::<u64>::new_unchecked(4096) },
+            result => unsafe { NonZero::<u64>::new_unchecked(result as u64) },
         };
 
     /// Maximum number of the `iovec` structures that can be provided to
@@ -70,9 +92,9 @@ lazy_static! {
 }
 
 /// Align a given number down to a specified alignment boundary.
-const fn align_down(n: u64, alignment: u64) -> u64 {
+const fn align_down(n: u64, alignment: NonZero<u64>) -> u64 {
     // Notice that the calculation below never causes an overflow.
-    n & !(alignment - 1)
+    n & !alignment.get().saturating_sub(1)
 }
 
 /// Prototype of the APIs `process_vm_readv()` and `process_vm_writev()`.
@@ -116,13 +138,13 @@ impl PageAwareAddressRange {
         let distance_to_preceeding_page_boundary =
             start_address - align_down(start_address, min_page_size);
 
-        let inside_one_page = (size <= min_page_size)
-            && ((distance_to_preceeding_page_boundary + size) <= min_page_size);
+        let inside_one_page = (size <= min_page_size.get())
+            && ((distance_to_preceeding_page_boundary + size) <= min_page_size.get());
 
         if inside_one_page {
             //             | -- distance_to_preceeding_page_boundary -- v ---- size ---- v                  |
             // preceeding_page_boundary           -->             start_address --> end_address --> next_page_boundary
-            return if distance_to_preceeding_page_boundary == 0 && size == min_page_size {
+            return if distance_to_preceeding_page_boundary == 0 && size == min_page_size.get() {
                 Self {
                     start_address,
                     size_in_first_page: 0,
@@ -146,7 +168,7 @@ impl PageAwareAddressRange {
         let size_in_first_page = if distance_to_preceeding_page_boundary == 0 {
             0
         } else {
-            min_page_size - distance_to_preceeding_page_boundary
+            min_page_size.get() - distance_to_preceeding_page_boundary
         };
 
         size -= size_in_first_page;
@@ -174,7 +196,7 @@ impl PageAwareAddressRange {
     /// (if any) is also returned. Returning a vector of `iovec`s that covers
     /// only a prefix of this address range is not considered a failure.
     fn into_iov_buffers(mut self) -> Result<(SmallVec<[libc::iovec; 3]>, u64)> {
-        let min_page_size = *MIN_SYSTEM_PAGE_SIZE;
+        let min_page_size = MIN_SYSTEM_PAGE_SIZE.get();
         let max_iov_count = *SYSTEM_IOV_MAX;
         let mut size_of_not_covered_suffix = 0;
 
@@ -238,7 +260,7 @@ impl PageAwareAddressRange {
             result.push(libc::iovec {
                 iov_base: usize::try_from(self.start_address)? as *mut c_void,
                 iov_len: usize::try_from(self.size_in_first_page)?,
-            })
+            });
         }
 
         let mut page_address = self.start_address.wrapping_add(self.size_in_first_page);
@@ -258,7 +280,7 @@ impl PageAwareAddressRange {
             result.push(libc::iovec {
                 iov_base: usize::try_from(start_of_last_page)? as *mut c_void,
                 iov_len: usize::try_from(self.size_in_last_page)?,
-            })
+            });
         }
         Ok((result, size_of_not_covered_suffix))
     }
@@ -329,6 +351,7 @@ impl ProcessVirtualMemoryIO {
     }
 
     /// Return the process identifier of the target process.
+    #[must_use]
     pub fn process_id(&self) -> u32 {
         self.process_id as u32
     }
@@ -390,11 +413,9 @@ impl ProcessVirtualMemoryIO {
             ));
         }
 
-        self.address = if (transferred_bytes_count as u64) < max_remaining_bytes {
-            Some(address + (transferred_bytes_count as u64))
-        } else {
-            None // End of file (actually, address space).
-        };
+        self.address = ((transferred_bytes_count as u64) < max_remaining_bytes)
+            .then_some(address + (transferred_bytes_count as u64));
+        // If self.address is None, then we reached the end of address space.
 
         Ok(transferred_bytes_count as usize)
     }
@@ -422,18 +443,19 @@ impl Seek for ProcessVirtualMemoryIO {
                 address.checked_add(forward)
             }
 
-            (None, SeekFrom::Current(n)) /* if n < 0 */ => {
-                let backward = n.wrapping_neg() as u64;
-                Some((u64::MAX - backward) + 1)
-            }
-            (_, SeekFrom::End(n)) /* if n < 0 */ => {
+            (None, SeekFrom::Current(n)) | (_, SeekFrom::End(n)) => {
+                // n < 0
                 let backward = n.wrapping_neg() as u64;
                 Some((u64::MAX - backward) + 1)
             }
 
-            (Some(address), SeekFrom::Current(n)) /* if n < 0 */ => {
+            (Some(address), SeekFrom::Current(n)) => {
+                // n < 0
                 let backward = n.wrapping_neg() as u64;
-                address.checked_sub(backward).ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput)).map(Some)?
+                address
+                    .checked_sub(backward)
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))
+                    .map(Some)?
             }
         };
 
@@ -444,7 +466,7 @@ impl Seek for ProcessVirtualMemoryIO {
 impl Read for ProcessVirtualMemoryIO {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let local_io_vector = libc::iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
+            iov_base: buf.as_mut_ptr().cast(),
             iov_len: buf.len(),
         };
 
@@ -454,8 +476,7 @@ impl Read for ProcessVirtualMemoryIO {
 
     fn read_vectored(&mut self, bufs: &mut [IoSliceMut]) -> io::Result<usize> {
         let bytes_to_read = bufs.iter().map(|buf| buf.len() as u64).sum();
-        let local_io_vectors =
-            unsafe { slice::from_raw_parts(bufs.as_ptr() as *const _, bufs.len()) };
+        let local_io_vectors = unsafe { slice::from_raw_parts(bufs.as_ptr().cast(), bufs.len()) };
 
         self.io_vectored(libc::process_vm_readv, local_io_vectors, bytes_to_read)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
@@ -479,8 +500,7 @@ impl Write for ProcessVirtualMemoryIO {
 
     fn write_vectored(&mut self, bufs: &[IoSlice]) -> io::Result<usize> {
         let bytes_to_write = bufs.iter().map(|buf| buf.len() as u64).sum();
-        let local_io_vectors =
-            unsafe { slice::from_raw_parts(bufs.as_ptr() as *const _, bufs.len()) };
+        let local_io_vectors = unsafe { slice::from_raw_parts(bufs.as_ptr().cast(), bufs.len()) };
 
         self.io_vectored(libc::process_vm_writev, local_io_vectors, bytes_to_write)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))

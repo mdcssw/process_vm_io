@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2023 MicroDoc Software GmbH.
+// Copyright (c) 2020-2025 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -11,8 +11,7 @@ use super::*;
 #[test]
 fn sensible_virtual_memory_page_size() {
     let size = *MIN_SYSTEM_PAGE_SIZE;
-    assert!(size > 0);
-    assert!(size < u64::MAX);
+    assert!(size.get() < u64::MAX);
     assert!(size.is_power_of_two());
 }
 
@@ -98,28 +97,28 @@ fn new_page_aware_address_range_1page() {
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(0, *MIN_SYSTEM_PAGE_SIZE),
+        PageAwareAddressRange::new(0, MIN_SYSTEM_PAGE_SIZE.get()),
         PageAwareAddressRange {
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get(),
             ..Default::default()
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(0x1000_0000, *MIN_SYSTEM_PAGE_SIZE),
+        PageAwareAddressRange::new(0x1000_0000, MIN_SYSTEM_PAGE_SIZE.get()),
         PageAwareAddressRange {
             start_address: 0x1000_0000,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get(),
             ..Default::default()
         }
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::MAX - *MIN_SYSTEM_PAGE_SIZE + 1,
-            *MIN_SYSTEM_PAGE_SIZE
+            u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() + 1,
+            MIN_SYSTEM_PAGE_SIZE.get()
         ),
         PageAwareAddressRange {
-            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE + 1,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
+            start_address: u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() + 1,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get(),
             ..Default::default()
         }
     );
@@ -129,7 +128,7 @@ fn new_page_aware_address_range_1page() {
 fn new_page_aware_address_range_2pages() {
     for addr in &[
         u64::MAX - 7,
-        *MIN_SYSTEM_PAGE_SIZE - 8,
+        MIN_SYSTEM_PAGE_SIZE.get() - 8,
         0x1000_0000 - 8,
     ] {
         assert_eq!(
@@ -147,71 +146,74 @@ fn new_page_aware_address_range_2pages() {
 #[test]
 fn new_page_aware_address_range_manypages() {
     assert_eq!(
-        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 5),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + MIN_SYSTEM_PAGE_SIZE.get() * 5),
         PageAwareAddressRange {
             start_address: u64::MAX - 7,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 5,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get() * 5,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + MIN_SYSTEM_PAGE_SIZE.get()),
         PageAwareAddressRange {
             start_address: u64::MAX - 7,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get(),
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(u64::MAX - 7, 32 + *MIN_SYSTEM_PAGE_SIZE * 2),
+        PageAwareAddressRange::new(u64::MAX - 7, 32 + MIN_SYSTEM_PAGE_SIZE.get() * 2),
         PageAwareAddressRange {
             start_address: u64::MAX - 7,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 2,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get() * 2,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
-            32 + *MIN_SYSTEM_PAGE_SIZE
+            u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() - 7,
+            32 + MIN_SYSTEM_PAGE_SIZE.get()
         ),
         PageAwareAddressRange {
-            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
+            start_address: u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() - 7,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get(),
             size_in_last_page: 24,
         }
     );
     assert_eq!(
         PageAwareAddressRange::new(
-            u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
-            32 + *MIN_SYSTEM_PAGE_SIZE * 2
+            u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() - 7,
+            32 + MIN_SYSTEM_PAGE_SIZE.get() * 2
         ),
         PageAwareAddressRange {
-            start_address: u64::MAX - *MIN_SYSTEM_PAGE_SIZE - 7,
+            start_address: u64::MAX - MIN_SYSTEM_PAGE_SIZE.get() - 7,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 2,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get() * 2,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(*MIN_SYSTEM_PAGE_SIZE - 8, 32 + *MIN_SYSTEM_PAGE_SIZE * 5),
+        PageAwareAddressRange::new(
+            MIN_SYSTEM_PAGE_SIZE.get() - 8,
+            32 + MIN_SYSTEM_PAGE_SIZE.get() * 5
+        ),
         PageAwareAddressRange {
-            start_address: *MIN_SYSTEM_PAGE_SIZE - 8,
+            start_address: MIN_SYSTEM_PAGE_SIZE.get() - 8,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 5,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get() * 5,
             size_in_last_page: 24,
         }
     );
     assert_eq!(
-        PageAwareAddressRange::new(0x1000_0000 - 8, 32 + *MIN_SYSTEM_PAGE_SIZE * 5),
+        PageAwareAddressRange::new(0x1000_0000 - 8, 32 + MIN_SYSTEM_PAGE_SIZE.get() * 5),
         PageAwareAddressRange {
             start_address: 0x1000_0000 - 8,
             size_in_first_page: 8,
-            size_of_inner_pages: *MIN_SYSTEM_PAGE_SIZE * 5,
+            size_of_inner_pages: MIN_SYSTEM_PAGE_SIZE.get() * 5,
             size_in_last_page: 24,
         }
     );
@@ -224,7 +226,7 @@ fn new_invalid_process_id() {
         ErrorKind::Io { error, process_id: Some(1), .. } if error.kind() == io::ErrorKind::PermissionDenied
     );
 
-    for pid in -2_i32..=0 {
+    for pid in -2_i32..=0_i32 {
         assert_matches!(
             unsafe { ProcessVirtualMemoryIO::new(pid as u32, 0) }.unwrap_err().kind(),
             ErrorKind::Io { error, .. } if error.kind() == io::ErrorKind::InvalidInput
@@ -242,7 +244,7 @@ fn new_invalid_address() {
 #[test]
 fn access_address_zero() {
     let process_id = std::process::id();
-    let mut buf = [0u8; 1];
+    let mut buf = [0_u8; 1];
 
     assert_matches!(
         unsafe { ProcessVirtualMemoryIO::new(process_id, 0) }.unwrap()

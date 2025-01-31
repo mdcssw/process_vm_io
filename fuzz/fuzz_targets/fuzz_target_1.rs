@@ -1,4 +1,4 @@
-// Copyright (c) 2020 MicroDoc Software GmbH.
+// Copyright (c) 2020-2025 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,

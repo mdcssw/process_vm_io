@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2023 MicroDoc Software GmbH.
+// Copyright (c) 2020-2025 MicroDoc Software GmbH.
 // See the "LICENSE.txt" file at the top-level directory of this distribution.
 //
 // Licensed under the MIT license. This file may not be copied, modified,
@@ -18,7 +18,6 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 /// Actual storage for an error.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-#[allow(variant_size_differences)]
 pub enum ErrorKind {
     /// Virtual memory address range contains too many pages.
     TooManyVMPages,
@@ -48,13 +47,10 @@ struct ErrorBackTrace {
 impl ErrorBackTrace {
     /// Resolve the call stack back trace to resolve all addresses
     /// to their symbolic names.
-    fn resolve(&mut self) -> bool {
+    fn resolve(&mut self) {
         if !self.resolved {
             self.resolved = true;
             self.backtrace.resolve();
-            true
-        } else {
-            false
         }
     }
 }
@@ -72,22 +68,11 @@ struct ErrorData {
     backtrace: Arc<Mutex<ErrorBackTrace>>,
 }
 
-impl ErrorData {
-    /// Resolve the call stack back trace to resolve all addresses
-    /// to their symbolic names.
-    fn resolve_back_trace(&self) -> bool {
-        let mut back_trace_lock = self.backtrace.lock().unwrap();
-        back_trace_lock.resolve()
-    }
-}
-
 impl fmt::Debug for ErrorData {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
-        if self.resolve_back_trace() {
-            fmt::Debug::fmt(self, _f)
-        } else {
-            Ok(())
-        }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut back_trace_lock = self.backtrace.lock().unwrap();
+        back_trace_lock.resolve();
+        write!(f, "Error: {:?}. At:\n{:?}", self.kind, *back_trace_lock)
     }
 }
 
@@ -119,8 +104,7 @@ impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match &self.0.kind {
             // Errors that are self-descriptive.
-            ErrorKind::TooManyVMPages => None,
-            ErrorKind::Io { .. } => None,
+            ErrorKind::TooManyVMPages | ErrorKind::Io { .. } => None,
 
             // Errors that defer description to the inner error.
             ErrorKind::IntegerCast(err) => Some(err),
@@ -166,17 +150,18 @@ impl Error {
     }
 
     /// Returns the actual kind of this error.
+    #[must_use]
     pub fn kind(&self) -> &ErrorKind {
         &self.0.kind
     }
 
     /// Returns the errno code for a given `Error`, if such a code has been
     /// reported by the operating system.
+    #[must_use]
     pub fn os_error_code(&self) -> Option<c_int> {
         match &self.0.kind {
-            ErrorKind::TooManyVMPages { .. } => None,
+            ErrorKind::TooManyVMPages { .. } | ErrorKind::IntegerCast { .. } => None,
             ErrorKind::Io { error, .. } => error.raw_os_error(),
-            ErrorKind::IntegerCast { .. } => None,
         }
     }
 }
