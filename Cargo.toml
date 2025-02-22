@@ -1,6 +1,6 @@
 [package]
 name = "process_vm_io"
-version = "1.0.12" # Remember to update `html_root_url` and `dependency status` link.
+version = "1.0.13" # Remember to update `html_root_url` and `dependency status` link.
 description = "I/O access to virtual memory contents of processes"
 authors = [
     "Koutheir Attouchi <koutheir.attouchi@microdoc.com>"
@@ -10,7 +10,7 @@ repository = "https://github.com/mdcssw/process_vm_io"
 documentation = "https://docs.rs/process_vm_io"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 categories = [
     "api-bindings",
     "development-tools",

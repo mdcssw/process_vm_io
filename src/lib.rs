@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.12")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.13")]
 #![warn(
     unsafe_op_in_unsafe_fn,
     missing_docs,
