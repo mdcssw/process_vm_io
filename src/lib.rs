@@ -7,7 +7,7 @@
 // TODO: https://rust-lang.github.io/api-guidelines/checklist.html
 
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.13")]
+#![doc(html_root_url = "https://docs.rs/process_vm_io/1.0.14")]
 #![warn(
     unsafe_op_in_unsafe_fn,
     missing_docs,
@@ -435,7 +435,7 @@ impl Read for ProcessVirtualMemoryIO {
             &[local_io_vector],
             buf.len() as u64,
         )
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        .map_err(io::Error::other)
     }
 
     fn read_vectored(&mut self, bufs: &mut [IoSliceMut]) -> io::Result<usize> {
@@ -447,7 +447,7 @@ impl Read for ProcessVirtualMemoryIO {
             local_io_vectors,
             byte_count,
         )
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        .map_err(io::Error::other)
     }
 }
 
@@ -464,7 +464,7 @@ impl Write for ProcessVirtualMemoryIO {
             &[local_io_vector],
             buf.len() as u64,
         )
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        .map_err(io::Error::other)
     }
 
     fn write_vectored(&mut self, bufs: &[IoSlice]) -> io::Result<usize> {
@@ -476,7 +476,7 @@ impl Write for ProcessVirtualMemoryIO {
             local_io_vectors,
             byte_count,
         )
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        .map_err(io::Error::other)
     }
 
     fn flush(&mut self) -> io::Result<()> {

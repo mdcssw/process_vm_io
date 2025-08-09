@@ -1,6 +1,6 @@
 [package]
 name = "process_vm_io"
-version = "1.0.13" # Remember to update `html_root_url` and `dependency status` link.
+version = "1.0.14" # Remember to update `html_root_url` and `dependency status` link.
 description = "I/O access to virtual memory contents of processes"
 authors = [
     "Koutheir Attouchi <koutheir.attouchi@microdoc.com>"

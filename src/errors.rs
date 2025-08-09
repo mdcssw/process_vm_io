@@ -175,7 +175,7 @@ impl Error {
     #[must_use]
     pub fn os_error_code(&self) -> Option<c_int> {
         match &self.0.kind {
-            ErrorKind::TooManyVMPages { .. }
+            ErrorKind::TooManyVMPages
             | ErrorKind::UnknownPageSize
             | ErrorKind::InvalidPageSize(_)
             | ErrorKind::IntegerCast { .. } => None,

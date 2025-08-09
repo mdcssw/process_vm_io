@@ -54,11 +54,10 @@ fn get_min_system_page_size() -> Result<NonZero<u64>> {
         r => r as u64,
     };
 
-    if let Some(value) = NonZero::new(value) {
-        if value.is_power_of_two() {
+    if let Some(value) = NonZero::new(value)
+        && value.is_power_of_two() {
             return Ok(value);
         }
-    }
 
     Err(Error::from(ErrorKind::InvalidPageSize(value)))
 }
